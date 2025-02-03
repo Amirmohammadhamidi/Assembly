@@ -5,7 +5,7 @@ CXX = g++
 CXXFLAGS = -lSDL2 -lSDL2_image
 
 # Source files
-SOURCES = TextureManager.cpp Game.cpp  project.cpp
+SOURCES = TextureManager.cpp GameObject.cpp Game.cpp  project.cpp
 
 # Output executable
 TARGET = project
