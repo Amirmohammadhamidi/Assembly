@@ -1,4 +1,7 @@
 #include "Game.hpp"
+#include "TextureManager.hpp"
+#include <iostream>
+
 using namespace std;
 
 SDL_Texture *playerTexture;
@@ -38,10 +41,7 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
     {
         isRunning = false;
     }
-
-    SDL_Surface *tmp_surface = IMG_Load("assets/images.jpeg");
-    playerTexture = SDL_CreateTextureFromSurface(renderer, tmp_surface);
-    SDL_FreeSurface(tmp_surface);
+    playerTexture = TextureManager::loadTexture("assets/images.jpeg", renderer);
 }
 
 void Game::handleEvents()
@@ -61,8 +61,10 @@ void Game::handleEvents()
 
 void Game::update()
 {
-    destR.h = 60;
-    destR.w = 60;
+    position++;
+    destR.h = 100;
+    destR.w = 100;
+    destR.x = position;
 }
 
 void Game::render()
