@@ -6,6 +6,8 @@
 
 using namespace std;
 Game *game = nullptr;
+const char *backgroundFilePath = "assets/Environment/background.jpg";
+
 int main(int argc, char *argv[])
 {
     const int FPS = 60;
@@ -15,7 +17,8 @@ int main(int argc, char *argv[])
     int frameTime;
 
     game = new Game();
-    game->init("title", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 800, 640, false);
+
+    game->init("game", backgroundFilePath, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 611, false);
     while (game->running())
     {
         frameStart = SDL_GetTicks();

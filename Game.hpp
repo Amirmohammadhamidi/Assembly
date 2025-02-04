@@ -5,11 +5,23 @@
 
 class Game
 {
-public:
-    Game();
-    ~Game();
 
-    void init(const char *title, int xpos, int ypos, int width, int height, bool fullScreen);
+public:
+    static int width, height;
+    static SDL_Renderer *renderer;
+    static SDL_Event event;
+    static SDL_Texture *background;
+    static SDL_Rect src, dest;
+    Game()
+    {
+    }
+
+    ~Game()
+    {
+    }
+
+    void init(const char *title, const char *path, int xpos, int ypos, int width, int height, bool fullScreen);
+    void handleGameElements();
     void handleEvents();
     void update();
     void render();
@@ -19,9 +31,10 @@ public:
     {
         return isRunning;
     }
-
-    static SDL_Renderer *renderer;
-    static SDL_Event event;
+    void setWindowSize()
+    {
+        SDL_GetWindowSize(window, &width, &height);
+    }
 
 private:
     bool isRunning;
@@ -29,4 +42,4 @@ private:
     SDL_Window *window;
 };
 
-#endif /* Game_hpp */
+#endif

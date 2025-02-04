@@ -6,20 +6,20 @@
 #include "vector2D.hpp"
 using namespace std;
 
-Map *map;
 Manager manager;
 SDL_Renderer *Game::renderer = nullptr; // initialize static renderer in this part
+SDL_Texture *Game::background;
 SDL_Event Game::event;
+int Game::width = 0;
+int Game::height = 0;
+SDL_Rect Game::src;
+SDL_Rect Game::dest;
+
+auto &ball = manager.addEntity();
 auto &player = manager.addEntity();
+auto &enemy = manager.addEntity();
 
-Game::Game()
-{
-}
-Game::~Game()
-{
-}
-
-void Game::init(const char *title, int xpos, int ypos, int width, int height, bool fullScreen)
+void Game::init(const char *title, const char *path, int xpos, int ypos, int width, int height, bool fullScreen)
 {
     int flags = 0;
     if (fullScreen)
@@ -46,10 +46,17 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
     {
         isRunning = false;
     }
-    map = new Map();
-    player.addComponent<TransformComponent>();
-    player.addComponent<SpriteComponent>("assets/jennie.jpeg");
-    player.addComponent<KeyboardController>();
+    Game::background = TextureManager::loadTexture(path);
+    setWindowSize();
+    Game::src = {0, 0, Game::width, Game::height};
+    Game::dest = {0, 0, Game::width, Game::height};
+    handleGameElements();
+}
+void Game::handleGameElements()
+{
+    ball.addComponent<TransformComponent>();
+    ball.addComponent<SpriteComponent>("assets/ball/trail.png", 1.0f);
+    ball.addComponent<KeyboardController>();
 }
 
 void Game::handleEvents()
@@ -70,16 +77,12 @@ void Game::update()
 {
     manager.refresh();
     manager.update();
-    if (player.getComponent<TransformComponent>().position.x > 200)
-    {
-        player.getComponent<SpriteComponent>().setTexture("assets/taylor.jpeg");
-    }
 }
 
 void Game::render()
 {
     SDL_RenderClear(renderer);
-    map->DrawMap();
+    TextureManager::Draw(Game::background, Game::src, Game::dest);
     manager.draw();
     SDL_RenderPresent(renderer);
 }

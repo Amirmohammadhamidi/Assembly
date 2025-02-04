@@ -1,18 +1,23 @@
 #include "TransformComponent.hpp"
 #include "SDL2/SDL.h"
 #include "../TextureManager.hpp"
+#include <iostream>
 class SpriteComponent : public Component
 {
 private:
     TransformComponent *transform;
     SDL_Texture *texture;
     SDL_Rect srcRect, destRect;
+    int width, height;
+    float scale;
 
 public:
     SpriteComponent() = default;
-    SpriteComponent(const char *path)
+    SpriteComponent(const char *path, float scale)
     {
         setTexture(path);
+        SDL_QueryTexture(texture, NULL, NULL, &width, &height);
+        this->scale = scale;
     }
     void setTexture(const char *path)
     {
@@ -22,8 +27,10 @@ public:
     {
         transform = &entity->getComponent<TransformComponent>();
         srcRect.x = srcRect.y = 0;
-        srcRect.w = srcRect.h = 32;
-        destRect.w = destRect.h = 64;
+        srcRect.w = width;
+        srcRect.h = height;
+        destRect.w = (int)(width * scale);
+        destRect.h = (int)(height * scale);
     }
 
     void update() override
