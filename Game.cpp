@@ -1,14 +1,16 @@
+#include <iostream>
 #include "Game.hpp"
 #include "TextureManager.hpp"
-#include "GameObject.hpp"
-#include <iostream>
 #include "Map.hpp"
+#include "ECS/Components.hpp"
+#include "vector2D.hpp"
 using namespace std;
 
-GameObject *player;
-GameObject *enemy;
 Map *map;
+Manager manager;
 SDL_Renderer *Game::renderer = nullptr; // initialize static renderer in this part
+SDL_Event Game::event;
+auto &player = manager.addEntity();
 
 Game::Game()
 {
@@ -44,14 +46,14 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
     {
         isRunning = false;
     }
-    player = new GameObject("assets/taylor.jpeg", 0, 0);
-    enemy = new GameObject("assets/jennie.jpeg", 50, 50);
     map = new Map();
+    player.addComponent<TransformComponent>();
+    player.addComponent<SpriteComponent>("assets/jennie.jpeg");
+    player.addComponent<KeyboardController>();
 }
 
 void Game::handleEvents()
 {
-    SDL_Event event;
     SDL_PollEvent(&event);
     switch (event.type)
     {
@@ -66,16 +68,19 @@ void Game::handleEvents()
 
 void Game::update()
 {
-    player->Update();
-    enemy->Update();
+    manager.refresh();
+    manager.update();
+    if (player.getComponent<TransformComponent>().position.x > 200)
+    {
+        player.getComponent<SpriteComponent>().setTexture("assets/taylor.jpeg");
+    }
 }
 
 void Game::render()
 {
     SDL_RenderClear(renderer);
     map->DrawMap();
-    player->Render();
-    enemy->Render();
+    manager.draw();
     SDL_RenderPresent(renderer);
 }
 
