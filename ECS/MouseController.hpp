@@ -4,7 +4,7 @@
 #include "ECS.hpp"
 #include "TransformComponent.hpp"
 #include "SpriteComponent.hpp"
-#include "vector2D.hpp"
+#include "../vector2D.hpp"
 #include <iostream>
 
 class MouseController : public Component

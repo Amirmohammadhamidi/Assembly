@@ -81,18 +81,19 @@ void Game::handleGameElements(int width, int height)
     sinIconXBound = new vector2D(0.08 * pitchSize->x, 0.08 * pitchSize->x + iconSize->x);
     sinIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
     sinIcon.addComponent<TransformComponent>(sinIconXBound->x, sinIconYBound->x);
-    sinIcon.addComponent<MouseController>("sin");
+    sinIcon.addComponent<MouseController>(sinIconXBound, sinIconYBound);
     sinIcon.addComponent<SpriteComponent>("assets/MainIcons/sin.png", (int)iconSize->x, (int)iconSize->y);
 
-    sinIconXBound = new vector2D(0.08 * pitchSize->x, 0.08 * pitchSize->x + iconSize->x);
-    sinIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
-
-    convexIcon.addComponent<TransformComponent>(sinIcon.getComponent<TransformComponent>().position.x + iconSize->x, pitchSize->y - iconSize->y);
-    convexIcon.addComponent<MouseController>("convex");
+    convexIconXBound = new vector2D(sinIconXBound->y, sinIconXBound->y + iconSize->x);
+    convexIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
+    convexIcon.addComponent<TransformComponent>(convexIconXBound->x, convexIconYBound->x);
+    convexIcon.addComponent<MouseController>(convexIconXBound, convexIconYBound);
     convexIcon.addComponent<SpriteComponent>("assets/MainIcons/convex.png", (int)iconSize->x, (int)iconSize->y);
 
-    lineIcon.addComponent<TransformComponent>(convexIcon.getComponent<TransformComponent>().position.x + iconSize->x, pitchSize->y - iconSize->y);
-    lineIcon.addComponent<MouseController>("line");
+    lineIconXBound = new vector2D(convexIconXBound->y, convexIconXBound->y + iconSize->x);
+    lineIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
+    lineIcon.addComponent<TransformComponent>(lineIconXBound->x, lineIconYBound->x);
+    lineIcon.addComponent<MouseController>(lineIconXBound, lineIconYBound);
     lineIcon.addComponent<SpriteComponent>("assets/MainIcons/line.png", (int)iconSize->x, (int)iconSize->y);
 }
 
@@ -104,7 +105,6 @@ void Game::handleEvents()
     case SDL_QUIT:
         isRunning = false;
         break;
-    case SDL_MOUSEBUTTONDOWN:
     }
 }
 
