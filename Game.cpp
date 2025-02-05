@@ -14,8 +14,13 @@ auto &target = manager.addEntity();
 auto &ball = manager.addEntity();
 auto &player = manager.addEntity();
 auto &enemy = manager.addEntity();
+auto &sinIcon = manager.addEntity();
+auto &convexIcon = manager.addEntity();
+auto &lineIcon = manager.addEntity();
 
-const vector2D *shooterPoint = new vector2D(180.0f, 478.0f);
+const vector2D *pitchSize;
+const vector2D *shooterPoint;
+const vector2D *iconSize;
 
 void Game::init(const char *title, int xpos, int ypos, int width, int height, bool fullScreen)
 {
@@ -44,13 +49,15 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
     {
         isRunning = false;
     }
-    handleGameElements();
+    handleGameElements(width, height);
 }
-void Game::handleGameElements()
+void Game::handleGameElements(int width, int height)
 {
+    pitchSize = new vector2D(width, height);
     pitch.addComponent<TransformComponent>();
     pitch.addComponent<SpriteComponent>("assets/Environment/background.jpg", 1.0f);
 
+    shooterPoint = new vector2D(0.121 * pitchSize->x, 0.492 * pitchSize->y);
     ball.addComponent<TransformComponent>(shooterPoint->x, shooterPoint->y);
     ball.addComponent<SpriteComponent>("assets/ball/ball.png", 0.4f);
     ball.addComponent<KeyboardController>();
@@ -58,6 +65,16 @@ void Game::handleGameElements()
     target.addComponent<TransformComponent>();
     target.addComponent<MouseController>();
     target.addComponent<SpriteComponent>("assets/MainIcons/target.png", 0.2f, true);
+
+    iconSize = new vector2D(0.05 * pitchSize->x, 0.077 * pitchSize->y);
+
+    sinIcon.addComponent<TransformComponent>(0.08 * pitchSize->x, pitchSize->y - iconSize->y);
+    sinIcon.addComponent<MouseController>();
+    sinIcon.addComponent<SpriteComponent>("assets/MainIcons/sin.png", (int)iconSize->x, (int)iconSize->y);
+
+    convexIcon.addComponent<TransformComponent>(sinIcon.getComponent<TransformComponent>().position.x + iconSize->x, pitchSize->y - iconSize->y);
+    convexIcon.addComponent<MouseController>();
+    convexIcon.addComponent<SpriteComponent>("assets/MainIcons/convex.png", (int)iconSize->x, (int)iconSize->y);
 }
 
 void Game::handleEvents()

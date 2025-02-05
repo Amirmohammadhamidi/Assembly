@@ -11,8 +11,8 @@ private:
     TransformComponent *transform;
     SDL_Texture *texture;
     SDL_Rect srcRect, destRect;
-    int width, height;
-    float scale;
+    int width, height, destWidth, destHeight;
+    float scale = 0.0f;
     bool centerize = false;
     bool lock = false;
 
@@ -23,13 +23,24 @@ public:
         setTexture(path);
         SDL_QueryTexture(texture, NULL, NULL, &width, &height);
         this->scale = scale;
+        destWidth = (int)(width * scale);
+        destHeight = (int)(height * scale);
     }
     SpriteComponent(const char *path, float scale, bool centerize)
     {
         setTexture(path);
         SDL_QueryTexture(texture, NULL, NULL, &width, &height);
         this->scale = scale;
+        destWidth = (int)(width * scale);
+        destHeight = (int)(height * scale);
         this->centerize = true;
+    }
+    SpriteComponent(const char *path, int destWidth, int destHeight)
+    {
+        setTexture(path);
+        SDL_QueryTexture(texture, NULL, NULL, &width, &height);
+        this->destWidth = destWidth;
+        this->destHeight = destHeight;
     }
     void setTexture(const char *path)
     {
@@ -41,8 +52,8 @@ public:
         srcRect.x = srcRect.y = 0;
         srcRect.w = width;
         srcRect.h = height;
-        destRect.w = (int)(width * scale);
-        destRect.h = (int)(height * scale);
+        destRect.w = destWidth;
+        destRect.h = destHeight;
     }
 
     void update() override

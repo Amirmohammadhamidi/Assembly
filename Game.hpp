@@ -17,7 +17,7 @@ public:
     }
 
     void init(const char *title, int xpos, int ypos, int width, int height, bool fullScreen);
-    void handleGameElements();
+    void handleGameElements(int width, int height);
     void handleEvents();
     void update();
     void render();
