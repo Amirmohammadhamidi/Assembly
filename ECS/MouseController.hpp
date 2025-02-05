@@ -25,7 +25,6 @@ public:
             SDL_GetMouseState(&x, &y);
             transform->position.x = x;
             transform->position.y = y;
-            std::cout << x << "," << y;
         }
     }
 

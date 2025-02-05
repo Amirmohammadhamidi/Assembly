@@ -69,12 +69,13 @@ void Game::handleGameElements(int width, int height)
     iconSize = new vector2D(0.05 * pitchSize->x, 0.077 * pitchSize->y);
 
     sinIcon.addComponent<TransformComponent>(0.08 * pitchSize->x, pitchSize->y - iconSize->y);
-    sinIcon.addComponent<MouseController>();
     sinIcon.addComponent<SpriteComponent>("assets/MainIcons/sin.png", (int)iconSize->x, (int)iconSize->y);
 
     convexIcon.addComponent<TransformComponent>(sinIcon.getComponent<TransformComponent>().position.x + iconSize->x, pitchSize->y - iconSize->y);
-    convexIcon.addComponent<MouseController>();
     convexIcon.addComponent<SpriteComponent>("assets/MainIcons/convex.png", (int)iconSize->x, (int)iconSize->y);
+
+    lineIcon.addComponent<TransformComponent>(convexIcon.getComponent<TransformComponent>().position.x + iconSize->x, pitchSize->y - iconSize->y);
+    lineIcon.addComponent<SpriteComponent>("assets/MainIcons/line.png", (int)iconSize->x, (int)iconSize->y);
 }
 
 void Game::handleEvents()
