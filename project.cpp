@@ -6,19 +6,19 @@
 
 using namespace std;
 Game *game = nullptr;
-const char *backgroundFilePath = "assets/Environment/background.jpg";
 
 int main(int argc, char *argv[])
 {
     const int FPS = 60;
     const int frameDelay = 1000 / FPS;
-
+    const int pitchWidth = 1500;
+    const int pitchHeight = 970;
     uint32_t frameStart;
     int frameTime;
 
     game = new Game();
 
-    game->init("game", backgroundFilePath, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1000, 611, false);
+    game->init("game", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, pitchWidth, pitchHeight, false);
     while (game->running())
     {
         frameStart = SDL_GetTicks();

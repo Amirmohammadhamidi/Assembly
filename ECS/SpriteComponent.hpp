@@ -1,3 +1,6 @@
+#ifndef SPRITECOMPONENT_HPP
+#define SPRITECOMPONENT_HPP
+
 #include "TransformComponent.hpp"
 #include "SDL2/SDL.h"
 #include "../TextureManager.hpp"
@@ -10,6 +13,8 @@ private:
     SDL_Rect srcRect, destRect;
     int width, height;
     float scale;
+    bool centerize = false;
+    bool lock = false;
 
 public:
     SpriteComponent() = default;
@@ -18,6 +23,13 @@ public:
         setTexture(path);
         SDL_QueryTexture(texture, NULL, NULL, &width, &height);
         this->scale = scale;
+    }
+    SpriteComponent(const char *path, float scale, bool centerize)
+    {
+        setTexture(path);
+        SDL_QueryTexture(texture, NULL, NULL, &width, &height);
+        this->scale = scale;
+        this->centerize = true;
     }
     void setTexture(const char *path)
     {
@@ -35,12 +47,32 @@ public:
 
     void update() override
     {
-        destRect.x = (int)transform->position.x;
-        destRect.y = (int)transform->position.y;
+        if (!lock)
+        {
+            if (centerize)
+            {
+                destRect.x = (int)(transform->position.x - (0.5 * destRect.w));
+                destRect.y = (int)(transform->position.y - (0.5 * destRect.h));
+            }
+            else
+            {
+                destRect.x = (int)transform->position.x;
+                destRect.y = (int)transform->position.y;
+            }
+        }
     }
 
     void draw()
     {
         TextureManager::Draw(texture, srcRect, destRect);
     }
+    void lockSprite()
+    {
+        lock = true;
+    }
+    void unlockSprite()
+    {
+        lock = false;
+    }
 };
+#endif

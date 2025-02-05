@@ -1,25 +1,23 @@
 #include <iostream>
 #include "Game.hpp"
 #include "TextureManager.hpp"
-#include "Map.hpp"
 #include "ECS/Components.hpp"
 #include "vector2D.hpp"
 using namespace std;
 
 Manager manager;
 SDL_Renderer *Game::renderer = nullptr; // initialize static renderer in this part
-SDL_Texture *Game::background;
 SDL_Event Game::event;
-int Game::width = 0;
-int Game::height = 0;
-SDL_Rect Game::src;
-SDL_Rect Game::dest;
 
+auto &pitch = manager.addEntity();
+auto &target = manager.addEntity();
 auto &ball = manager.addEntity();
 auto &player = manager.addEntity();
 auto &enemy = manager.addEntity();
 
-void Game::init(const char *title, const char *path, int xpos, int ypos, int width, int height, bool fullScreen)
+const vector2D *shooterPoint = new vector2D(180.0f, 478.0f);
+
+void Game::init(const char *title, int xpos, int ypos, int width, int height, bool fullScreen)
 {
     int flags = 0;
     if (fullScreen)
@@ -46,17 +44,20 @@ void Game::init(const char *title, const char *path, int xpos, int ypos, int wid
     {
         isRunning = false;
     }
-    Game::background = TextureManager::loadTexture(path);
-    setWindowSize();
-    Game::src = {0, 0, Game::width, Game::height};
-    Game::dest = {0, 0, Game::width, Game::height};
     handleGameElements();
 }
 void Game::handleGameElements()
 {
-    ball.addComponent<TransformComponent>();
-    ball.addComponent<SpriteComponent>("assets/ball/trail.png", 1.0f);
+    pitch.addComponent<TransformComponent>();
+    pitch.addComponent<SpriteComponent>("assets/Environment/background.jpg", 1.0f);
+
+    ball.addComponent<TransformComponent>(shooterPoint->x, shooterPoint->y);
+    ball.addComponent<SpriteComponent>("assets/ball/ball.png", 0.4f);
     ball.addComponent<KeyboardController>();
+
+    target.addComponent<TransformComponent>();
+    target.addComponent<MouseController>();
+    target.addComponent<SpriteComponent>("assets/MainIcons/target.png", 0.2f, true);
 }
 
 void Game::handleEvents()
@@ -66,9 +67,6 @@ void Game::handleEvents()
     {
     case SDL_QUIT:
         isRunning = false;
-        break;
-
-    default:
         break;
     }
 }
@@ -82,7 +80,6 @@ void Game::update()
 void Game::render()
 {
     SDL_RenderClear(renderer);
-    TextureManager::Draw(Game::background, Game::src, Game::dest);
     manager.draw();
     SDL_RenderPresent(renderer);
 }

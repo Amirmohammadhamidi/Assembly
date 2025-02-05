@@ -13,6 +13,7 @@
 
 class Component;
 class Entity;
+class Manager;
 
 using ComponentID = std::size_t;
 inline ComponentID getComponentTypeID()
@@ -57,6 +58,7 @@ private:
     ComponentBitSet componentBitSet;
 
 public:
+    Manager *manager;
     void update()
     {
         for (auto &c : components)
@@ -135,6 +137,7 @@ public:
     Entity &addEntity()
     {
         Entity *e = new Entity();
+        e->manager = this;
         std::unique_ptr<Entity> uPtr{e};
         entities.emplace_back(std::move(uPtr));
         return *e;

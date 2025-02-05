@@ -8,7 +8,6 @@ class KeyboardController : public Component
 {
 public:
     TransformComponent *transform;
-
     void init() override
     {
         transform = &entity->getComponent<TransformComponent>();
