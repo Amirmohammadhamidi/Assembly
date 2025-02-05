@@ -22,6 +22,15 @@ const vector2D *pitchSize;
 const vector2D *shooterPoint;
 const vector2D *iconSize;
 
+const vector2D *pitchXBound;
+const vector2D *pitchYBound;
+const vector2D *sinIconXBound;
+const vector2D *sinIconYBound;
+const vector2D *convexIconXBound;
+const vector2D *convexIconYBound;
+const vector2D *lineIconXBound;
+const vector2D *lineIconYBound;
+
 void Game::init(const char *title, int xpos, int ypos, int width, int height, bool fullScreen)
 {
     int flags = 0;
@@ -54,27 +63,36 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
 void Game::handleGameElements(int width, int height)
 {
     pitchSize = new vector2D(width, height);
+    pitchXBound = new vector2D(0, width);
+    pitchYBound = new vector2D(0, height);
     pitch.addComponent<TransformComponent>();
     pitch.addComponent<SpriteComponent>("assets/Environment/background.jpg", 1.0f);
 
     shooterPoint = new vector2D(0.121 * pitchSize->x, 0.492 * pitchSize->y);
     ball.addComponent<TransformComponent>(shooterPoint->x, shooterPoint->y);
     ball.addComponent<SpriteComponent>("assets/ball/ball.png", 0.4f);
-    ball.addComponent<KeyboardController>();
 
     target.addComponent<TransformComponent>();
-    target.addComponent<MouseController>();
+    target.addComponent<MouseController>(pitchXBound, pitchYBound);
     target.addComponent<SpriteComponent>("assets/MainIcons/target.png", 0.2f, true);
 
     iconSize = new vector2D(0.05 * pitchSize->x, 0.077 * pitchSize->y);
 
-    sinIcon.addComponent<TransformComponent>(0.08 * pitchSize->x, pitchSize->y - iconSize->y);
+    sinIconXBound = new vector2D(0.08 * pitchSize->x, 0.08 * pitchSize->x + iconSize->x);
+    sinIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
+    sinIcon.addComponent<TransformComponent>(sinIconXBound->x, sinIconYBound->x);
+    sinIcon.addComponent<MouseController>("sin");
     sinIcon.addComponent<SpriteComponent>("assets/MainIcons/sin.png", (int)iconSize->x, (int)iconSize->y);
 
+    sinIconXBound = new vector2D(0.08 * pitchSize->x, 0.08 * pitchSize->x + iconSize->x);
+    sinIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
+
     convexIcon.addComponent<TransformComponent>(sinIcon.getComponent<TransformComponent>().position.x + iconSize->x, pitchSize->y - iconSize->y);
+    convexIcon.addComponent<MouseController>("convex");
     convexIcon.addComponent<SpriteComponent>("assets/MainIcons/convex.png", (int)iconSize->x, (int)iconSize->y);
 
     lineIcon.addComponent<TransformComponent>(convexIcon.getComponent<TransformComponent>().position.x + iconSize->x, pitchSize->y - iconSize->y);
+    lineIcon.addComponent<MouseController>("line");
     lineIcon.addComponent<SpriteComponent>("assets/MainIcons/line.png", (int)iconSize->x, (int)iconSize->y);
 }
 
@@ -86,6 +104,7 @@ void Game::handleEvents()
     case SDL_QUIT:
         isRunning = false;
         break;
+    case SDL_MOUSEBUTTONDOWN:
     }
 }
 
