@@ -9,11 +9,14 @@
 
 class MouseController : public Component
 {
-public:
-    TransformComponent *transform;
-    bool active;
+private:
+    bool active = false;
     const vector2D *xBound;
     const vector2D *yBound;
+    vector2D *clickedPosition = new vector2D();
+
+public:
+    TransformComponent *transform;
 
     MouseController(const vector2D *Xvec, const vector2D *Yvec)
     {
@@ -38,14 +41,16 @@ public:
             SDL_GetMouseState(&x, &y);
             if ((xBound->x < x) && (x < xBound->y) && (yBound->x < y) && (y < yBound->y))
             {
-                active = true;
+                activate();
+                clickedPosition->x = x;
+                clickedPosition->y = y;
             }
-            transform->position.x = x;
-            transform->position.y = y;
         }
     }
-
+    vector2D *getClickedPosition() { return clickedPosition; }
     bool isActive() { return active; }
+    void activate() { active = true; }
+    void deActivate() { active = false; }
 };
 
 #endif

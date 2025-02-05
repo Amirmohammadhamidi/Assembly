@@ -23,6 +23,7 @@ public:
     void render();
     void clean();
     bool running() { return isRunning; }
+    void handleInputs();
 
 private:
     bool isRunning;

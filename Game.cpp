@@ -63,8 +63,11 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
 void Game::handleGameElements(int width, int height)
 {
     pitchSize = new vector2D(width, height);
+    iconSize = new vector2D(0.06 * pitchSize->x, 0.092 * pitchSize->y);
+
     pitchXBound = new vector2D(0, width);
-    pitchYBound = new vector2D(0, height);
+    pitchYBound = new vector2D(iconSize->x, pitchSize->y - iconSize->y);
+
     pitch.addComponent<TransformComponent>();
     pitch.addComponent<SpriteComponent>("assets/Environment/background.jpg", 1.0f);
 
@@ -75,8 +78,6 @@ void Game::handleGameElements(int width, int height)
     target.addComponent<TransformComponent>();
     target.addComponent<MouseController>(pitchXBound, pitchYBound);
     target.addComponent<SpriteComponent>("assets/MainIcons/target.png", 0.2f, true);
-
-    iconSize = new vector2D(0.05 * pitchSize->x, 0.077 * pitchSize->y);
 
     sinIconXBound = new vector2D(0.08 * pitchSize->x, 0.08 * pitchSize->x + iconSize->x);
     sinIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
@@ -99,12 +100,31 @@ void Game::handleGameElements(int width, int height)
 
 void Game::handleEvents()
 {
+    handleInputs();
     SDL_PollEvent(&event);
-    switch (event.type)
+    if (event.type == SDL_QUIT)
     {
-    case SDL_QUIT:
         isRunning = false;
-        break;
+        return;
+    }
+}
+
+void Game::handleInputs()
+{
+    if (target.getComponent<MouseController>().isActive())
+    {
+        target.getComponent<TransformComponent>().position.x = target.getComponent<MouseController>().getClickedPosition()->x;
+        target.getComponent<TransformComponent>().position.y = target.getComponent<MouseController>().getClickedPosition()->y;
+        target.getComponent<MouseController>().deActivate();
+    }
+
+    if (lineIcon.getComponent<MouseController>().isActive())
+    {
+        float deltaY = target.getComponent<MouseController>().getClickedPosition()->y - ball.getComponent<TransformComponent>().position.y;
+        float deltaX = target.getComponent<MouseController>().getClickedPosition()->x - ball.getComponent<TransformComponent>().position.x;
+        ball.getComponent<TransformComponent>().velocity.x = (deltaX / 500);
+        ball.getComponent<TransformComponent>().velocity.y = (deltaY / 500);
+        lineIcon.getComponent<MouseController>().deActivate();
     }
 }
 
