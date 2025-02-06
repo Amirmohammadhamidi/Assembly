@@ -24,6 +24,8 @@ public:
     void clean();
     bool running() { return isRunning; }
     void handleInputs();
+    void setXvalues();
+    void lineConverter(float a, float b);
 
 private:
     bool isRunning;

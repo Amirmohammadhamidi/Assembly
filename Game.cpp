@@ -3,7 +3,10 @@
 #include "TextureManager.hpp"
 #include "ECS/Components.hpp"
 #include "vector2D.hpp"
+#include <chrono>
 using namespace std;
+extern "C" void fill_array(float *array, size_t size, float percision, float x0);
+extern "C" void line_handler(size_t size, float *x_array, float *y_array, float a, float b);
 
 const float pixelSize = 0.27 * 0.001;
 float deltaX, deltaY, averageVelocity;
@@ -41,6 +44,18 @@ const vector2D *concaveIconYBound;
 const vector2D *lineIconXBound;
 const vector2D *lineIconYBound;
 
+float percision;
+float x_values[1000];
+float y_values[1000];
+
+std::string movementType;
+int movementcounter = 0;
+
+bool asmChecker;
+
+std::chrono::duration<double> duration_cpp(0.0);
+std::chrono::duration<double> duration_asm(0.0);
+
 void Game::init(const char *title, int xpos, int ypos, int width, int height, bool fullScreen)
 {
     int flags = 0;
@@ -51,7 +66,7 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
         window = SDL_CreateWindow(title, xpos, ypos, width, height, flags);
         if (window)
         {
-            cout << "window is created\n";
+            // cout << "window is created\n";
         }
 
         renderer = SDL_CreateRenderer(window, -1, 0);
@@ -59,7 +74,7 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
         {
             // set default color to renderer:
             SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-            cout << "renderer is created\n";
+            // cout << "renderer is created\n";
         }
 
         isRunning = true;
@@ -68,7 +83,16 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
     {
         isRunning = false;
     }
+
     handleGameElements(width, height);
+
+    int checkType;
+    cout << "check type : 1:asm  2:cpp" << endl;
+    cin >> checkType;
+    if (checkType == 1)
+        asmChecker = true;
+    else
+        asmChecker = false;
 }
 void Game::handleGameElements(int width, int height)
 {
@@ -132,21 +156,20 @@ void Game::handleInputs()
         deltaY = target.getComponent<TransformComponent>().position.y - shooterPoint->y;
         averageVelocity = deltaY / deltaX;
         dist = sqrt((deltaX * deltaX) + (deltaY * deltaY)) * pixelSize;
+        percision = deltaX / 999;
+        setXvalues();
+
         target.getComponent<MouseController>().deActivate();
     }
 
-    if (lineIcon.getComponent<MouseController>().isActive())
+    else if (lineIcon.getComponent<MouseController>().isActive())
     {
-        acceleration->x = acceleration->y = 0.0f;
-        velocity->x = 1.0f;
-        velocity->y = averageVelocity;
-        vector2D::normalizeVector(*velocity);
-        ball.getComponent<TransformComponent>().velocity.x = velocity->x;
-        ball.getComponent<TransformComponent>().velocity.y = velocity->y;
+        lineConverter(averageVelocity, shooterPoint->y - (averageVelocity * shooterPoint->x));
+        movementType = "line";
         lineIcon.getComponent<MouseController>().deActivate();
     }
 
-    if (concaveIcon.getComponent<MouseController>().isActive())
+    else if (concaveIcon.getComponent<MouseController>().isActive())
     {
         acceleration->x = 0.0f;
         acceleration->y = 9.8f * pixelSize;
@@ -161,7 +184,7 @@ void Game::handleInputs()
         ball.getComponent<TransformComponent>().velocity.y = velocity->y;
     }
 
-    if (sinIcon.getComponent<MouseController>().isActive())
+    else if (sinIcon.getComponent<MouseController>().isActive())
     {
         double w = atan(averageVelocity);
         float x = (ball.getComponent<TransformComponent>().position.x - shooterPoint->x) * pixelSize;
@@ -173,6 +196,56 @@ void Game::handleInputs()
 
         ball.getComponent<TransformComponent>().velocity.x = velocity->x;
         ball.getComponent<TransformComponent>().velocity.y = velocity->y;
+    }
+
+    if (movementType == "line")
+    {
+        ball.getComponent<TransformComponent>().position.x = x_values[movementcounter];
+        ball.getComponent<TransformComponent>().position.y = y_values[movementcounter];
+        movementcounter++;
+    }
+}
+
+void Game::setXvalues()
+{
+    if (asmChecker)
+    {
+        auto start_asm = std::chrono::high_resolution_clock::now();
+        fill_array(x_values, 1000, percision, shooterPoint->x);
+        auto end_asm = std::chrono::high_resolution_clock::now();
+        duration_asm += (end_asm - start_asm);
+    }
+    else
+    {
+        auto start_cpp = std::chrono::high_resolution_clock::now();
+        x_values[0] = shooterPoint->x;
+        for (int i = 1; i < 1000; i++)
+        {
+            x_values[i] = x_values[i - 1] + percision;
+        }
+        auto end_cpp = std::chrono::high_resolution_clock::now();
+        duration_cpp += (end_cpp - start_cpp);
+    }
+}
+
+void Game::lineConverter(float a, float b)
+{
+    if (asmChecker)
+    {
+        auto start_asm = std::chrono::high_resolution_clock::now();
+        line_handler(1000, x_values, y_values, a, b);
+        auto end_asm = std::chrono::high_resolution_clock::now();
+        duration_asm += (end_asm - start_asm);
+    }
+    else
+    {
+        auto start_cpp = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i <= 1000; i++)
+        {
+            y_values[i] = a * x_values[i] + b;
+        }
+        auto end_cpp = std::chrono::high_resolution_clock::now();
+        duration_cpp += (end_cpp - start_cpp);
     }
 }
 
