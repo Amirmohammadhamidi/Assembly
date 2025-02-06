@@ -51,4 +51,28 @@ fill_array:
     ret
 
 line_handler:
-    
+    ;rdi : size
+    ;rsi : float * x_array
+    ;rdx : float * y_array
+    ;xmm0 : a , xmm1 : b
+    shufps xmm0 , xmm0 , 0 ; xmm0 = {a , a , a , a}
+    shufps xmm1 , xmm1 , 0 ; xmm1 = {b , b , b , b}
+    xorps xmm3 , xmm3 ; clear xmm3
+    xor r8 , r8 ; clear r8
+.loop:
+    cmp r8, rdi         ; Compare index with size
+    je .done           ; if index is equal to size of array
+
+    movaps xmm3 , [rsi + 4 * r8] ; load 4 float number to xmm3
+    mulps xmm3 , xmm0
+    addps xmm3 , xmm1
+
+    movaps [rdx + 4 * r8], xmm3  ; Store the result (4 * r8 for float indexing)
+
+    add r8 , 4              ; Increment the index by 1 (for the next float)
+
+    jmp .loop           ; Repeat the loop
+
+.done:
+    ret
+

@@ -44,9 +44,10 @@ const vector2D *concaveIconYBound;
 const vector2D *lineIconXBound;
 const vector2D *lineIconYBound;
 
+const int n = 400;
 float percision;
-float x_values[1000];
-float y_values[1000];
+float x_values[n];
+float y_values[n];
 
 std::string movementType;
 int movementcounter = 0;
@@ -156,7 +157,7 @@ void Game::handleInputs()
         deltaY = target.getComponent<TransformComponent>().position.y - shooterPoint->y;
         averageVelocity = deltaY / deltaX;
         dist = sqrt((deltaX * deltaX) + (deltaY * deltaY)) * pixelSize;
-        percision = deltaX / 999;
+        percision = deltaX / (n - 1);
         setXvalues();
 
         target.getComponent<MouseController>().deActivate();
@@ -211,7 +212,7 @@ void Game::setXvalues()
     if (asmChecker)
     {
         auto start_asm = std::chrono::high_resolution_clock::now();
-        fill_array(x_values, 1000, percision, shooterPoint->x);
+        fill_array(x_values, n, percision, shooterPoint->x);
         auto end_asm = std::chrono::high_resolution_clock::now();
         duration_asm += (end_asm - start_asm);
     }
@@ -219,7 +220,7 @@ void Game::setXvalues()
     {
         auto start_cpp = std::chrono::high_resolution_clock::now();
         x_values[0] = shooterPoint->x;
-        for (int i = 1; i < 1000; i++)
+        for (int i = 1; i < n; i++)
         {
             x_values[i] = x_values[i - 1] + percision;
         }
@@ -233,14 +234,14 @@ void Game::lineConverter(float a, float b)
     if (asmChecker)
     {
         auto start_asm = std::chrono::high_resolution_clock::now();
-        line_handler(1000, x_values, y_values, a, b);
+        line_handler(n, x_values, y_values, a, b);
         auto end_asm = std::chrono::high_resolution_clock::now();
         duration_asm += (end_asm - start_asm);
     }
     else
     {
         auto start_cpp = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i <= 1000; i++)
+        for (int i = 0; i < n; i++)
         {
             y_values[i] = a * x_values[i] + b;
         }
