@@ -25,6 +25,7 @@ public:
         velocity.x = 0;
         velocity.y = 0;
     }
+
     void update() override
     {
         position.x += (velocity.x) * speed;
