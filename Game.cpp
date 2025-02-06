@@ -24,6 +24,8 @@ auto &lineIcon = manager.addEntity();
 
 vector2D *acceleration = new vector2D();
 vector2D *velocity = new vector2D();
+vector2D *targetXBound;
+vector2D *targetYBound;
 
 const vector2D *pitchSize;
 const vector2D *shooterPoint;
@@ -125,6 +127,7 @@ void Game::handleInputs()
     {
         target.getComponent<TransformComponent>().position.x = target.getComponent<MouseController>().getClickedPosition()->x;
         target.getComponent<TransformComponent>().position.y = target.getComponent<MouseController>().getClickedPosition()->y;
+
         deltaX = target.getComponent<TransformComponent>().position.x - shooterPoint->x;
         deltaY = target.getComponent<TransformComponent>().position.y - shooterPoint->y;
         averageVelocity = deltaY / deltaX;
