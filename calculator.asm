@@ -4,6 +4,8 @@ section .text
 
 global fill_array
 global line_handler
+global concave_handler
+global sin_handler
 
 fill_array:
     ;xmm0 : percision
@@ -55,17 +57,54 @@ line_handler:
     ;rsi : float * x_array
     ;rdx : float * y_array
     ;xmm0 : a , xmm1 : b
+    xor r8 , r8 ; clear r8
+    xorps xmm2 , xmm2 ; clear xmm2
+
     shufps xmm0 , xmm0 , 0 ; xmm0 = {a , a , a , a}
     shufps xmm1 , xmm1 , 0 ; xmm1 = {b , b , b , b}
-    xorps xmm3 , xmm3 ; clear xmm3
-    xor r8 , r8 ; clear r8
+    
 .loop:
     cmp r8, rdi         ; Compare index with size
     je .done           ; if index is equal to size of array
 
-    movaps xmm3 , [rsi + 4 * r8] ; load 4 float number to xmm3
-    mulps xmm3 , xmm0
-    addps xmm3 , xmm1
+    movaps xmm2 , [rsi + 4 * r8] ; load 4 float number to xmm2
+    mulps xmm2 , xmm0
+    addps xmm2 , xmm1
+
+    movaps [rdx + 4 * r8], xmm2  ; Store the result (4 * r8 for float indexing)
+
+    add r8 , 4              ; Increment the index by 1 (for the next float)
+
+    jmp .loop           ; Repeat the loop
+
+.done:
+    ret
+
+concave_handler:
+    ;rdi : size , rsi : x_array , rdx : y_array
+    ;xmm0 : a , xmm1 : b , xmm2 : c
+    xor r8 , r8 ; clear r8
+    xorps xmm3 , xmm3 ; clear xmm3 and use it as result
+    xorps xmm4 , xmm4 ; clear xmm4
+
+    shufps xmm0 , xmm0 , 0 ; xmm0 = {a , a , a , a}
+    shufps xmm1 , xmm1 , 0 ; xmm1 = {b , b , b , b}
+    shufps xmm2 , xmm2 , 0 ; xmm2 = {c , c , c , c}
+
+.loop:
+    cmp r8, rdi         ; Compare index with size
+    je .done           ; if index is equal to size of array
+
+    movaps xmm3 , [rsi + 4 * r8] ; load 4 float number to xmm2
+    movaps xmm4 , xmm3 ; xmm4 <- xmm3
+
+    mulps xmm3 , xmm3
+    mulps xmm3 , xmm0 ; xmm3 = {ax^2}
+
+    mulps xmm4 , xmm1 ; xmm4 = {bx}
+
+    addps xmm3 , xmm4
+    addps xmm3 , xmm2 ; xmm3 = {ax^2 + bx + c}
 
     movaps [rdx + 4 * r8], xmm3  ; Store the result (4 * r8 for float indexing)
 
@@ -76,3 +115,45 @@ line_handler:
 .done:
     ret
 
+sin_handler:
+    ;rdi : size , rsi : x_array , rdx : y_array
+    ;xmm0 : w , xmm1 : x0 , xmm2 : y0
+    xor r8 , r8 ; clear r8
+    vxorps zmm0 , zmm0 , zmm0 ; clear zmm0 and use it as base vector register to calculate delta x
+    vxorps zmm1 , zmm1 , zmm1 ; clear zmm1 and use it as base vector register to calculate y
+    vxorps zmm2 , zmm2 , zmm2 ; clear zmm2 and use it as result vector register
+
+    pxor xmm3 , xmm3 ; clear xmm3
+    subss xmm3 , xmm1 ; xmm3 <- -xmm1
+    movaps xmm1 , xmm3 ; xmm1 <- -xmm1
+
+    vbroadcastss zmm0 , xmm1 ; set all elements of zmm0 to xmm1 : {-x0 , -x0 , .... , -x0}
+    vbroadcastss zmm1 , xmm2 ; set all elements of zmm1 to xmm2 : {y0 , y0 , .. , y0}
+
+
+.loop:
+    cmp r8, rdi         ; Compare index with size
+    je .done           ; if index is equal to size of array
+
+    vmovaps zmm1 , [rsi + 16 * r8] ; load 16 float number to xmm2
+    vaddps zmm1 , zmm1 , zmm0 ; zmm1 <- zmm1 + zmm0 ; x <- x - x0
+
+    mulps xmm3 , xmm3
+    mulps xmm3 , xmm0 ; xmm3 = {ax^2}
+
+    mulps xmm4 , xmm1 ; xmm4 = {bx}
+
+    addps xmm3 , xmm4
+    addps xmm3 , xmm2 ; xmm3 = {ax^2 + bx + c}
+
+    movaps [rdx + 16 * r8], xmm3  ; Store the result (4 * r8 for float indexing)
+
+    add r8 , 16             ; Increment the index by 1 (for the next float)
+
+    jmp .loop           ; Repeat the loop
+
+.done:
+    ret
+
+
+    

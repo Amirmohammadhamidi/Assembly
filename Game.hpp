@@ -26,6 +26,8 @@ public:
     void handleInputs();
     void setXvalues();
     void lineConverter(float a, float b);
+    void concaveConverter(float a, float b, float c);
+    void sinConverter(float w);
 
 private:
     bool isRunning;

@@ -7,8 +7,10 @@
 using namespace std;
 extern "C" void fill_array(float *array, size_t size, float percision, float x0);
 extern "C" void line_handler(size_t size, float *x_array, float *y_array, float a, float b);
+extern "C" void concave_handler(size_t size, float *x_array, float *y_array, float a, float b, float c);
+extern "C" void sin_handler(size_t size, float *x_array, float *y_array, float w, float x0, float y0);
 
-const float pixelSize = 0.27 * 0.001;
+const float pixelSize = 0.00027f;
 float deltaX, deltaY, averageVelocity;
 double dist;
 
@@ -44,15 +46,16 @@ const vector2D *concaveIconYBound;
 const vector2D *lineIconXBound;
 const vector2D *lineIconYBound;
 
-const int n = 400;
+const int m = 25;
+const int n = 16 * m;
 float percision;
 float x_values[n];
 float y_values[n];
 
-std::string movementType;
 int movementcounter = 0;
 
 bool asmChecker;
+bool graphicalActivation = false;
 
 std::chrono::duration<double> duration_cpp(0.0);
 std::chrono::duration<double> duration_asm(0.0);
@@ -132,6 +135,13 @@ void Game::handleGameElements(int width, int height)
     lineIcon.addComponent<TransformComponent>(lineIconXBound->x, lineIconYBound->x);
     lineIcon.addComponent<MouseController>(lineIconXBound, lineIconYBound);
     lineIcon.addComponent<SpriteComponent>("assets/MainIcons/line.png", (int)iconSize->x, (int)iconSize->y);
+
+    deltaX = enemyPoint->x - shooterPoint->x;
+    deltaY = enemyPoint->y - shooterPoint->y;
+    averageVelocity = deltaY / deltaX;
+    dist = sqrt((deltaX * deltaX) + (deltaY * deltaY)) * pixelSize;
+    percision = deltaX / (n - 1);
+    setXvalues();
 }
 
 void Game::handleEvents()
@@ -166,29 +176,31 @@ void Game::handleInputs()
     else if (lineIcon.getComponent<MouseController>().isActive())
     {
         lineConverter(averageVelocity, shooterPoint->y - (averageVelocity * shooterPoint->x));
-        movementType = "line";
+        graphicalActivation = true;
         lineIcon.getComponent<MouseController>().deActivate();
     }
 
     else if (concaveIcon.getComponent<MouseController>().isActive())
     {
-        acceleration->x = 0.0f;
-        acceleration->y = 9.8f * pixelSize;
+        float a = 4.9f * pixelSize;
+        float b = averageVelocity - (a * (shooterPoint->x + target.getComponent<TransformComponent>().position.x));
+        float c = shooterPoint->y - (a * (shooterPoint->x * shooterPoint->x)) - (b * shooterPoint->x);
 
-        float v0 = averageVelocity - 0.5 * acceleration->y * (target.getComponent<TransformComponent>().position.x + shooterPoint->x);
+        concaveConverter(a, b, c);
 
-        velocity->x = 1.0f;
-        velocity->y = acceleration->y * ball.getComponent<TransformComponent>().position.x + v0;
-        vector2D::normalizeVector(*velocity);
-
-        ball.getComponent<TransformComponent>().velocity.x = velocity->x;
-        ball.getComponent<TransformComponent>().velocity.y = velocity->y;
+        graphicalActivation = true;
+        concaveIcon.getComponent<MouseController>().deActivate();
     }
 
     else if (sinIcon.getComponent<MouseController>().isActive())
     {
         double w = atan(averageVelocity);
         float x = (ball.getComponent<TransformComponent>().position.x - shooterPoint->x) * pixelSize;
+
+        sinConverter(static_cast<float>(w));
+
+        graphicalActivation = true;
+        sinIcon.getComponent<MouseController>().deActivate();
 
         velocity->x = static_cast<float>(cos(w));
         // velocity->y = static_cast<float>(sin(w) - cos(w) * cos(x * 2 * M_PI * 5 / dist));
@@ -199,7 +211,7 @@ void Game::handleInputs()
         ball.getComponent<TransformComponent>().velocity.y = velocity->y;
     }
 
-    if (movementType == "line")
+    if (graphicalActivation)
     {
         ball.getComponent<TransformComponent>().position.x = x_values[movementcounter];
         ball.getComponent<TransformComponent>().position.y = y_values[movementcounter];
@@ -244,6 +256,47 @@ void Game::lineConverter(float a, float b)
         for (int i = 0; i < n; i++)
         {
             y_values[i] = a * x_values[i] + b;
+        }
+        auto end_cpp = std::chrono::high_resolution_clock::now();
+        duration_cpp += (end_cpp - start_cpp);
+    }
+}
+
+void Game::concaveConverter(float a, float b, float c)
+{
+    if (asmChecker)
+    {
+        auto start_asm = std::chrono::high_resolution_clock::now();
+        concave_handler(n, x_values, y_values, a, b, c);
+        auto end_asm = std::chrono::high_resolution_clock::now();
+        duration_asm += (end_asm - start_asm);
+    }
+    else
+    {
+        auto start_cpp = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < n; i++)
+        {
+            y_values[i] = (a * (x_values[i] * x_values[i])) + (b * x_values[i]) + c;
+        }
+        auto end_cpp = std::chrono::high_resolution_clock::now();
+        duration_cpp += (end_cpp - start_cpp);
+    }
+}
+
+void Game::sinConverter(float w)
+{
+    if (asmChecker)
+    {
+        auto start_asm = std::chrono::high_resolution_clock::now();
+        sin_handler(n, x_values, y_values, w, shooterPoint->x, shooterPoint->y);
+        auto end_asm = std::chrono::high_resolution_clock::now();
+        duration_asm += (end_asm - start_asm);
+    }
+    else
+    {
+        auto start_cpp = std::chrono::high_resolution_clock::now();
+        for (int i = 0; i < n; i++)
+        {
         }
         auto end_cpp = std::chrono::high_resolution_clock::now();
         duration_cpp += (end_cpp - start_cpp);
