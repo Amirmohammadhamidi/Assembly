@@ -20,13 +20,29 @@ public:
     SpriteComponent() = default;
     SpriteComponent(const char *path, float scale)
     {
+        generateSprite(path, scale);
+    }
+    SpriteComponent(const char *path, float scale, bool centerize)
+    {
+        generateSprite(path, scale, centerize);
+    }
+    SpriteComponent(const char *path, int destWidth, int destHeight)
+    {
+        generateSprite(path, destWidth, destHeight);
+    }
+    void setTexture(const char *path)
+    {
+        texture = TextureManager::loadTexture(path);
+    }
+    void generateSprite(const char *path, float scale)
+    {
         setTexture(path);
         SDL_QueryTexture(texture, NULL, NULL, &width, &height);
         this->scale = scale;
         destWidth = (int)(width * scale);
         destHeight = (int)(height * scale);
     }
-    SpriteComponent(const char *path, float scale, bool centerize)
+    void generateSprite(const char *path, float scale, bool centerize)
     {
         setTexture(path);
         SDL_QueryTexture(texture, NULL, NULL, &width, &height);
@@ -35,16 +51,12 @@ public:
         destHeight = (int)(height * scale);
         this->centerize = true;
     }
-    SpriteComponent(const char *path, int destWidth, int destHeight)
+    void generateSprite(const char *path, int destWidth, int destHeight)
     {
         setTexture(path);
         SDL_QueryTexture(texture, NULL, NULL, &width, &height);
         this->destWidth = destWidth;
         this->destHeight = destHeight;
-    }
-    void setTexture(const char *path)
-    {
-        texture = TextureManager::loadTexture(path);
     }
     void init() override
     {
@@ -77,13 +89,7 @@ public:
     {
         TextureManager::Draw(texture, srcRect, destRect);
     }
-    void lockSprite()
-    {
-        lock = true;
-    }
-    void unlockSprite()
-    {
-        lock = false;
-    }
+    int getDestWidth() { return destWidth; }
+    int getDestHeight() { return destHeight; }
 };
 #endif

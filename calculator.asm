@@ -1,5 +1,8 @@
 section .note.GNU-stack
 
+section .data
+    float_value dd 1.0
+
 section .text
 
 global fill_array
@@ -95,7 +98,7 @@ concave_handler:
     cmp r8, rdi         ; Compare index with size
     je .done           ; if index is equal to size of array
 
-    movaps xmm3 , [rsi + 4 * r8] ; load 4 float number to xmm2
+    movaps xmm3 , [rsi + 4 * r8] ; load 4 float number to xmm3
     movaps xmm4 , xmm3 ; xmm4 <- xmm3
 
     mulps xmm3 , xmm3
@@ -116,44 +119,32 @@ concave_handler:
     ret
 
 sin_handler:
-    ;rdi : size , rsi : x_array , rdx : y_array
-    ;xmm0 : w , xmm1 : x0 , xmm2 : y0
-    xor r8 , r8 ; clear r8
-    vxorps zmm0 , zmm0 , zmm0 ; clear zmm0 and use it as base vector register to calculate delta x
-    vxorps zmm1 , zmm1 , zmm1 ; clear zmm1 and use it as base vector register to calculate y
-    vxorps zmm2 , zmm2 , zmm2 ; clear zmm2 and use it as result vector register
+    ; rdi : size (number of floats)
+    ; rsi : x_array (input float array)
+    ; rdx : y_array (output float array)
+    ; xmm0 : x0 , xmm1 : y0 , xmm2 : w_sin , xmm3 : w_cos
 
-    pxor xmm3 , xmm3 ; clear xmm3
-    subss xmm3 , xmm1 ; xmm3 <- -xmm1
-    movaps xmm1 , xmm3 ; xmm1 <- -xmm1
+    xor r8, r8                ; r8 = 0 (index counter)
 
-    vbroadcastss zmm0 , xmm1 ; set all elements of zmm0 to xmm1 : {-x0 , -x0 , .... , -x0}
-    vbroadcastss zmm1 , xmm2 ; set all elements of zmm1 to xmm2 : {y0 , y0 , .. , y0}
-
+    shufps xmm0, xmm0, 0      ; xmm0 = {x0, x0, x0, x0}
+    shufps xmm1, xmm1, 0      ; xmm1 = {y0, y0, y0, y0}
+    shufps xmm2, xmm2, 0      ; xmm2 = {w_sin, w_sin, w_sin, w_sin}
+    shufps xmm3, xmm3, 0      ; xmm3 = {w_cos, w_cos, w_cos, w_cos}
 
 .loop:
-    cmp r8, rdi         ; Compare index with size
-    je .done           ; if index is equal to size of array
+    cmp r8, rdi               ; Check if r8 >= size
+    jae .done                 ; Exit if done
 
-    vmovaps zmm1 , [rsi + 16 * r8] ; load 16 float number to xmm2
-    vaddps zmm1 , zmm1 , zmm0 ; zmm1 <- zmm1 + zmm0 ; x <- x - x0
+    movaps xmm4, [rsi + 4 * r8]  ; Load 4 floats (use movups for unaligned access)
+    subps xmm4, xmm0             ; xmm4 = x - x0
+    divps xmm4, xmm3             ; xmm4 = (x - x0) / cos(w)
+    mulps xmm4, xmm2             ; xmm5 = w_sin * (x - x0) / cos(w)
+    addps xmm4 , xmm1
 
-    mulps xmm3 , xmm3
-    mulps xmm3 , xmm0 ; xmm3 = {ax^2}
+    movaps [rdx + 4 * r8], xmm4  ; Store the result (unaligned access)
 
-    mulps xmm4 , xmm1 ; xmm4 = {bx}
-
-    addps xmm3 , xmm4
-    addps xmm3 , xmm2 ; xmm3 = {ax^2 + bx + c}
-
-    movaps [rdx + 16 * r8], xmm3  ; Store the result (4 * r8 for float indexing)
-
-    add r8 , 16             ; Increment the index by 1 (for the next float)
-
-    jmp .loop           ; Repeat the loop
+    add r8, 4                    ; Move to next 4 floats
+    jmp .loop                    ; Repeat
 
 .done:
     ret
-
-
-    

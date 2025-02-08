@@ -52,6 +52,7 @@ class Entity
 {
 private:
     bool active = true;
+    bool lock = false;
     // each entity save list of components which it contains
     std::vector<std::unique_ptr<Component>> components;
     ComponentArray componentArray;
@@ -69,6 +70,9 @@ public:
         for (auto &c : components)
             c->draw();
     }
+    bool isLock() { return lock; }
+    void lockEntity() { lock = true; }
+    void unlockEntity() { lock = false; }
     bool isActive() { return active; }
     void destroy() { active = false; }
 

@@ -5,10 +5,11 @@
 #include "vector2D.hpp"
 #include <chrono>
 using namespace std;
+
 extern "C" void fill_array(float *array, size_t size, float percision, float x0);
 extern "C" void line_handler(size_t size, float *x_array, float *y_array, float a, float b);
 extern "C" void concave_handler(size_t size, float *x_array, float *y_array, float a, float b, float c);
-extern "C" void sin_handler(size_t size, float *x_array, float *y_array, float w, float x0, float y0);
+extern "C" void sin_handler(size_t size, float *x_array, float *y_array, float x0, float y0, float w_sin, float w_cos);
 
 const float pixelSize = 0.00027f;
 float deltaX, deltaY, averageVelocity;
@@ -22,10 +23,10 @@ auto &pitch = manager.addEntity();
 auto &target = manager.addEntity();
 auto &ball = manager.addEntity();
 auto &player = manager.addEntity();
-auto &enemy = manager.addEntity();
 auto &sinIcon = manager.addEntity();
 auto &concaveIcon = manager.addEntity();
 auto &lineIcon = manager.addEntity();
+auto &enemyIcon = manager.addEntity();
 
 vector2D *acceleration = new vector2D();
 vector2D *velocity = new vector2D();
@@ -45,6 +46,8 @@ const vector2D *concaveIconXBound;
 const vector2D *concaveIconYBound;
 const vector2D *lineIconXBound;
 const vector2D *lineIconYBound;
+const vector2D *enemyIconXBound;
+const vector2D *enemyIconYBound;
 
 const int m = 25;
 const int n = 16 * m;
@@ -54,8 +57,8 @@ float y_values[n];
 
 int movementcounter = 0;
 
-bool asmChecker;
 bool graphicalActivation = false;
+bool enemyActivation = false;
 
 std::chrono::duration<double> duration_cpp(0.0);
 std::chrono::duration<double> duration_asm(0.0);
@@ -89,14 +92,6 @@ void Game::init(const char *title, int xpos, int ypos, int width, int height, bo
     }
 
     handleGameElements(width, height);
-
-    int checkType;
-    cout << "check type : 1:asm  2:cpp" << endl;
-    cin >> checkType;
-    if (checkType == 1)
-        asmChecker = true;
-    else
-        asmChecker = false;
 }
 void Game::handleGameElements(int width, int height)
 {
@@ -118,6 +113,9 @@ void Game::handleGameElements(int width, int height)
     target.addComponent<MouseController>(pitchXBound, pitchYBound);
     target.addComponent<SpriteComponent>("assets/MainIcons/target.png", 0.2f, true);
 
+    targetXBound = new vector2D(enemyPoint->x, enemyPoint->x + target.getComponent<SpriteComponent>().getDestWidth());
+    targetYBound = new vector2D(enemyPoint->y, enemyPoint->y + target.getComponent<SpriteComponent>().getDestHeight());
+
     sinIconXBound = new vector2D(0.08 * pitchSize->x, 0.08 * pitchSize->x + iconSize->x);
     sinIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
     sinIcon.addComponent<TransformComponent>(sinIconXBound->x, sinIconYBound->x);
@@ -135,6 +133,12 @@ void Game::handleGameElements(int width, int height)
     lineIcon.addComponent<TransformComponent>(lineIconXBound->x, lineIconYBound->x);
     lineIcon.addComponent<MouseController>(lineIconXBound, lineIconYBound);
     lineIcon.addComponent<SpriteComponent>("assets/MainIcons/line.png", (int)iconSize->x, (int)iconSize->y);
+
+    enemyIconXBound = new vector2D(lineIconXBound->y, lineIconXBound->y + iconSize->x);
+    enemyIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
+    enemyIcon.addComponent<TransformComponent>(enemyIconXBound->x, enemyIconYBound->x);
+    enemyIcon.addComponent<MouseController>(enemyIconXBound, enemyIconYBound);
+    enemyIcon.addComponent<SpriteComponent>("assets/MainIcons/enemyIcon.png", (int)iconSize->x, (int)iconSize->y);
 
     deltaX = enemyPoint->x - shooterPoint->x;
     deltaY = enemyPoint->y - shooterPoint->y;
@@ -157,11 +161,35 @@ void Game::handleEvents()
 
 void Game::handleInputs()
 {
+    if (enemyActivation)
+    {
+    }
+    else if (enemyIcon.getComponent<MouseController>().isActive())
+    {
+        target.getComponent<TransformComponent>().position.x = enemyPoint->x;
+        target.getComponent<TransformComponent>().position.y = enemyPoint->y;
+        target.getComponent<SpriteComponent>().generateSprite("assets/MainIcons/enemy.png", (int)iconSize->x, (int)iconSize->y);
+        ball.getComponent<TransformComponent>().position.x = shooterPoint->x;
+        ball.getComponent<TransformComponent>().position.y = shooterPoint->y;
 
-    if (target.getComponent<MouseController>().isActive())
+        lineIcon.getComponent<MouseController>().deActivate();
+        concaveIcon.getComponent<MouseController>().deActivate();
+        sinIcon.getComponent<MouseController>().deActivate();
+        graphicalActivation = false;
+        enemyActivation = true;
+        movementcounter = 0;
+    }
+
+    else if (target.getComponent<MouseController>().isActive())
     {
         target.getComponent<TransformComponent>().position.x = target.getComponent<MouseController>().getClickedPosition()->x;
         target.getComponent<TransformComponent>().position.y = target.getComponent<MouseController>().getClickedPosition()->y;
+        target.getComponent<SpriteComponent>().update();
+
+        targetXBound->x = target.getComponent<TransformComponent>().position.x;
+        targetXBound->x = target.getComponent<TransformComponent>().position.x + target.getComponent<SpriteComponent>().getDestWidth();
+        targetYBound->x = target.getComponent<TransformComponent>().position.y;
+        targetYBound->x = target.getComponent<TransformComponent>().position.y + target.getComponent<SpriteComponent>().getDestHeight();
 
         deltaX = target.getComponent<TransformComponent>().position.x - shooterPoint->x;
         deltaY = target.getComponent<TransformComponent>().position.y - shooterPoint->y;
@@ -177,6 +205,7 @@ void Game::handleInputs()
     {
         lineConverter(averageVelocity, shooterPoint->y - (averageVelocity * shooterPoint->x));
         graphicalActivation = true;
+        target.lockEntity();
         lineIcon.getComponent<MouseController>().deActivate();
     }
 
@@ -189,6 +218,7 @@ void Game::handleInputs()
         concaveConverter(a, b, c);
 
         graphicalActivation = true;
+        target.lockEntity();
         concaveIcon.getComponent<MouseController>().deActivate();
     }
 
@@ -200,107 +230,112 @@ void Game::handleInputs()
         sinConverter(static_cast<float>(w));
 
         graphicalActivation = true;
+        target.lockEntity();
         sinIcon.getComponent<MouseController>().deActivate();
-
-        velocity->x = static_cast<float>(cos(w));
-        // velocity->y = static_cast<float>(sin(w) - cos(w) * cos(x * 2 * M_PI * 5 / dist));
-        velocity->y = static_cast<float>(sin(w) - cos(w) * cos(x * 20 * M_PI));
-        vector2D::normalizeVector(*velocity);
-
-        ball.getComponent<TransformComponent>().velocity.x = velocity->x;
-        ball.getComponent<TransformComponent>().velocity.y = velocity->y;
     }
 
     if (graphicalActivation)
     {
-        ball.getComponent<TransformComponent>().position.x = x_values[movementcounter];
-        ball.getComponent<TransformComponent>().position.y = y_values[movementcounter];
-        movementcounter++;
+        if (movementcounter == n)
+        {
+            ball.getComponent<TransformComponent>().position.x = shooterPoint->x;
+            ball.getComponent<TransformComponent>().position.y = shooterPoint->y;
+            movementcounter = 0;
+            graphicalActivation = false;
+            target.unlockEntity();
+        }
+        else
+        {
+            ball.getComponent<TransformComponent>().position.x = x_values[movementcounter];
+            ball.getComponent<TransformComponent>().position.y = y_values[movementcounter];
+            movementcounter++;
+        }
     }
 }
 
 void Game::setXvalues()
 {
-    if (asmChecker)
+    auto start_asm = std::chrono::high_resolution_clock::now();
+    fill_array(x_values, n, percision, shooterPoint->x);
+    auto end_asm = std::chrono::high_resolution_clock::now();
+    duration_asm += (end_asm - start_asm);
+
+    auto start_cpp = std::chrono::high_resolution_clock::now();
+    x_values[0] = shooterPoint->x;
+    for (int i = 1; i < n; i++)
     {
-        auto start_asm = std::chrono::high_resolution_clock::now();
-        fill_array(x_values, n, percision, shooterPoint->x);
-        auto end_asm = std::chrono::high_resolution_clock::now();
-        duration_asm += (end_asm - start_asm);
+        x_values[i] = x_values[i - 1] + percision;
     }
-    else
-    {
-        auto start_cpp = std::chrono::high_resolution_clock::now();
-        x_values[0] = shooterPoint->x;
-        for (int i = 1; i < n; i++)
-        {
-            x_values[i] = x_values[i - 1] + percision;
-        }
-        auto end_cpp = std::chrono::high_resolution_clock::now();
-        duration_cpp += (end_cpp - start_cpp);
-    }
+    auto end_cpp = std::chrono::high_resolution_clock::now();
+    duration_cpp += (end_cpp - start_cpp);
 }
 
 void Game::lineConverter(float a, float b)
 {
-    if (asmChecker)
+    // asm duration checker :
+    auto start_asm = std::chrono::high_resolution_clock::now();
+    line_handler(n, x_values, y_values, a, b);
+    auto end_asm = std::chrono::high_resolution_clock::now();
+    duration_asm += (end_asm - start_asm);
+    cout << "assembly setting duration time for straight line is : " << duration_asm.count() * 1000 << " miliseconds" << endl;
+
+    // cpp duration checker :
+    auto start_cpp = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < n; i++)
     {
-        auto start_asm = std::chrono::high_resolution_clock::now();
-        line_handler(n, x_values, y_values, a, b);
-        auto end_asm = std::chrono::high_resolution_clock::now();
-        duration_asm += (end_asm - start_asm);
+        y_values[i] = a * x_values[i] + b;
     }
-    else
-    {
-        auto start_cpp = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < n; i++)
-        {
-            y_values[i] = a * x_values[i] + b;
-        }
-        auto end_cpp = std::chrono::high_resolution_clock::now();
-        duration_cpp += (end_cpp - start_cpp);
-    }
+    auto end_cpp = std::chrono::high_resolution_clock::now();
+    duration_cpp += (end_cpp - start_cpp);
+    cout << "cpp setting duration time for straight line is : " << duration_cpp.count() * 1000 << " miliseconds" << endl;
+
+    cout << "assembly usage makes code : " << (duration_cpp.count() / duration_asm.count()) << " times faster!" << endl;
 }
 
 void Game::concaveConverter(float a, float b, float c)
 {
-    if (asmChecker)
+    // asm duration checker :
+    auto start_asm = std::chrono::high_resolution_clock::now();
+    concave_handler(n, x_values, y_values, a, b, c);
+    auto end_asm = std::chrono::high_resolution_clock::now();
+    duration_asm += (end_asm - start_asm);
+    cout << "assembly setting duration time for concave is : " << duration_asm.count() * 1000 << " miliseconds" << endl;
+
+    // cpp duration checker :
+    auto start_cpp = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < n; i++)
     {
-        auto start_asm = std::chrono::high_resolution_clock::now();
-        concave_handler(n, x_values, y_values, a, b, c);
-        auto end_asm = std::chrono::high_resolution_clock::now();
-        duration_asm += (end_asm - start_asm);
+        y_values[i] = (a * (x_values[i] * x_values[i])) + (b * x_values[i]) + c;
     }
-    else
-    {
-        auto start_cpp = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < n; i++)
-        {
-            y_values[i] = (a * (x_values[i] * x_values[i])) + (b * x_values[i]) + c;
-        }
-        auto end_cpp = std::chrono::high_resolution_clock::now();
-        duration_cpp += (end_cpp - start_cpp);
-    }
+    auto end_cpp = std::chrono::high_resolution_clock::now();
+    duration_cpp += (end_cpp - start_cpp);
+    cout << "cpp setting duration time for concave is : " << duration_cpp.count() * 1000 << " miliseconds" << endl;
+    cout << "assembly usage makes code : " << (duration_cpp.count() / duration_asm.count()) << " times faster!" << endl;
 }
 
 void Game::sinConverter(float w)
 {
-    if (asmChecker)
+    int N = 50;
+
+    // asm duration checker :
+    // auto start_asm = std::chrono::high_resolution_clock::now();
+    // sin_handler(n, x_values, y_values, shooterPoint->x, shooterPoint->y, static_cast<float>(sin(w)), static_cast<float>(w));
+    // auto end_asm = std::chrono::high_resolution_clock::now();
+    // duration_asm += (end_asm - start_asm);
+    // cout << "assembly setting duration time for sin : " << duration_asm.count() * 1000 << " miliseconds" << endl;
+
+    // cpp duration checker :
+    auto start_cpp = std::chrono::high_resolution_clock::now();
+    for (int i = 0; i < n; i++)
     {
-        auto start_asm = std::chrono::high_resolution_clock::now();
-        sin_handler(n, x_values, y_values, w, shooterPoint->x, shooterPoint->y);
-        auto end_asm = std::chrono::high_resolution_clock::now();
-        duration_asm += (end_asm - start_asm);
+        float x = x_values[i] - shooterPoint->x;
+        float x1 = x / cos(w);
+        y_values[i] = x1 * sin(w) + cos(w) * sin(x1 / N) * N + shooterPoint->y;
     }
-    else
-    {
-        auto start_cpp = std::chrono::high_resolution_clock::now();
-        for (int i = 0; i < n; i++)
-        {
-        }
-        auto end_cpp = std::chrono::high_resolution_clock::now();
-        duration_cpp += (end_cpp - start_cpp);
-    }
+    auto end_cpp = std::chrono::high_resolution_clock::now();
+    duration_cpp += (end_cpp - start_cpp);
+    cout << "cpp setting duration time for sin : " << duration_cpp.count() * 1000 << " miliseconds" << endl;
+    cout << "assembly usage makes code : " << (duration_cpp.count() / duration_asm.count()) << " times faster!" << endl;
 }
 
 void Game::update()

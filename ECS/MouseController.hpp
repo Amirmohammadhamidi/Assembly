@@ -35,7 +35,7 @@ public:
 
     void update() override
     {
-        if (Game::event.type == SDL_MOUSEBUTTONDOWN)
+        if (Game::event.type == SDL_MOUSEBUTTONDOWN && (!entity->isLock()))
         {
             int x, y;
             SDL_GetMouseState(&x, &y);
