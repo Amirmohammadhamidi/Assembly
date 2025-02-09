@@ -30,6 +30,7 @@ public:
     void concaveConverter(float a, float b, float c);
     void sinConverter(float w);
     vector2D *generateRandomPath(float x0, float y0, float x1, bool flag);
+    int generate_random_int(int lowerBound, int upperBound);
 
 private:
     bool isRunning;

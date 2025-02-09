@@ -29,6 +29,7 @@ auto &concaveIcon = manager.addEntity();
 auto &lineIcon = manager.addEntity();
 auto &enemyIcon = manager.addEntity();
 auto &timerIcon = manager.addEntity();
+auto &ballIcon = manager.addEntity();
 
 vector2D *acceleration = new vector2D();
 vector2D *velocity = new vector2D();
@@ -54,6 +55,8 @@ const vector2D *enemyIconXBound;
 const vector2D *enemyIconYBound;
 const vector2D *timerIconXBound;
 const vector2D *timerIconYBound;
+const vector2D *ballIconXBound;
+const vector2D *ballIconYBound;
 
 const int m = 25;
 const int n = 16 * m;
@@ -161,6 +164,12 @@ void Game::handleGameElements(int width, int height)
     timerIcon.addComponent<MouseController>(timerIconXBound, timerIconYBound);
     timerIcon.addComponent<SpriteComponent>("assets/MainIcons/time.png", (int)iconSize->x, (int)iconSize->y);
 
+    ballIconXBound = new vector2D(timerIconXBound->y, timerIconXBound->y + iconSize->x);
+    ballIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
+    ballIcon.addComponent<TransformComponent>(ballIconXBound->x, ballIconYBound->x);
+    ballIcon.addComponent<MouseController>(ballIconXBound, ballIconYBound);
+    ballIcon.addComponent<SpriteComponent>("assets/MainIcons/ball.png", (int)iconSize->x, (int)iconSize->y);
+
     deltaX = enemyPoint->x - shooterPoint->x;
     deltaY = enemyPoint->y - shooterPoint->y;
     averageVelocity = deltaY / deltaX;
@@ -182,6 +191,17 @@ void Game::handleEvents()
 
 void Game::handleInputs()
 {
+    if (ballIcon.getComponent<MouseController>().isActive())
+    {
+        int random_number = generate_random_int(0, 11);
+        std::string path = "assets/ball/coloredspheres/sphere-0";
+        path += std::to_string(random_number);
+        path += ".png";
+        const char *pathstr = path.c_str();
+        ball.getComponent<SpriteComponent>().generateSprite(pathstr, 60, 60);
+        ballIcon.getComponent<MouseController>().deActivate();
+    }
+
     if (enemyActivation)
     {
         if (timerIcon.getComponent<MouseController>().isActive())
@@ -427,6 +447,14 @@ vector2D *Game::generateRandomPath(float x0, float y0, float x1, bool flag)
     vector2D::normalizeVector(*vec, flag);
 
     return vec;
+}
+
+int Game::generate_random_int(int lowerBound, int upperBound)
+{
+    std::random_device rd;
+    std::mt19937 eng(rd());
+    std::uniform_int_distribution<> distr(lowerBound, upperBound);
+    return distr(eng);
 }
 
 void Game::update()
