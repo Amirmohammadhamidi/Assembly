@@ -28,6 +28,7 @@ auto &sinIcon = manager.addEntity();
 auto &concaveIcon = manager.addEntity();
 auto &lineIcon = manager.addEntity();
 auto &enemyIcon = manager.addEntity();
+auto &timerIcon = manager.addEntity();
 
 vector2D *acceleration = new vector2D();
 vector2D *velocity = new vector2D();
@@ -51,6 +52,8 @@ const vector2D *lineIconXBound;
 const vector2D *lineIconYBound;
 const vector2D *enemyIconXBound;
 const vector2D *enemyIconYBound;
+const vector2D *timerIconXBound;
+const vector2D *timerIconYBound;
 
 const int m = 25;
 const int n = 16 * m;
@@ -152,6 +155,12 @@ void Game::handleGameElements(int width, int height)
     enemyIcon.addComponent<MouseController>(enemyIconXBound, enemyIconYBound);
     enemyIcon.addComponent<SpriteComponent>("assets/MainIcons/enemyIcon.png", (int)iconSize->x, (int)iconSize->y);
 
+    timerIconXBound = new vector2D(enemyIconXBound->y, enemyIconXBound->y + iconSize->x);
+    timerIconYBound = new vector2D(pitchSize->y - iconSize->y, pitchSize->y);
+    timerIcon.addComponent<TransformComponent>(timerIconXBound->x, timerIconYBound->x);
+    timerIcon.addComponent<MouseController>(timerIconXBound, timerIconYBound);
+    timerIcon.addComponent<SpriteComponent>("assets/MainIcons/time.png", (int)iconSize->x, (int)iconSize->y);
+
     deltaX = enemyPoint->x - shooterPoint->x;
     deltaY = enemyPoint->y - shooterPoint->y;
     averageVelocity = deltaY / deltaX;
@@ -175,6 +184,11 @@ void Game::handleInputs()
 {
     if (enemyActivation)
     {
+        if (timerIcon.getComponent<MouseController>().isActive())
+        {
+            ball.getComponent<TransformComponent>().speedUp();
+            timerIcon.getComponent<MouseController>().deActivate();
+        }
         ballX = ball.getComponent<TransformComponent>().position.x;
         ballY = ball.getComponent<TransformComponent>().position.y;
         targetX = target.getComponent<TransformComponent>().position.x;
@@ -388,8 +402,10 @@ void Game::sinConverter(float w)
     {
         float x = x_values[i] - shooterPoint->x;
         float x1 = x / cos(w);
-        y_values[i] = x1 * sin(w) + cos(w) * sin(x1 / N) * N + shooterPoint->y;
+        y_values[i] = x1 * sin(w) - cos(w) * sin(x1 / N) * N + (shooterPoint->y);
+        cout << "y is : " << y_values[i] << endl;
     }
+
     auto end_cpp = std::chrono::high_resolution_clock::now();
     duration_cpp += (end_cpp - start_cpp);
     cout << "cpp setting duration time for sin : " << duration_cpp.count() * 1000 << " miliseconds" << endl;

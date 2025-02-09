@@ -9,6 +9,7 @@ public:
     vector2D velocity;
 
     int speed = 3;
+    int deltaS = 2;
     TransformComponent()
     {
         position.x = 0.0f;
@@ -30,6 +31,11 @@ public:
     {
         position.x += (velocity.x) * speed;
         position.y += (velocity.y) * speed;
+    }
+
+    void speedUp()
+    {
+        speed += deltaS;
     }
 };
 #endif
