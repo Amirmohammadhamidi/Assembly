@@ -4,6 +4,7 @@
 #include "ECS/Components.hpp"
 #include "vector2D.hpp"
 #include <chrono>
+#include <random>
 using namespace std;
 
 extern "C" void fill_array(float *array, size_t size, float percision, float x0);
@@ -32,6 +33,8 @@ vector2D *acceleration = new vector2D();
 vector2D *velocity = new vector2D();
 vector2D *targetXBound;
 vector2D *targetYBound;
+vector2D *playerXBound;
+vector2D *playerYBound;
 
 const vector2D *pitchSize;
 const vector2D *shooterPoint;
@@ -59,6 +62,9 @@ int movementcounter = 0;
 
 bool graphicalActivation = false;
 bool enemyActivation = false;
+
+float ballX, ballY;
+float targetX, targetY;
 
 std::chrono::duration<double> duration_cpp(0.0);
 std::chrono::duration<double> duration_asm(0.0);
@@ -113,6 +119,12 @@ void Game::handleGameElements(int width, int height)
     target.addComponent<MouseController>(pitchXBound, pitchYBound);
     target.addComponent<SpriteComponent>("assets/MainIcons/target.png", 0.2f, true);
 
+    player.addComponent<TransformComponent>(shooterPoint->x - iconSize->x, shooterPoint->y - (iconSize->y * 0.5f));
+    player.addComponent<KeyboardController>();
+    player.addComponent<SpriteComponent>("assets/MainIcons/player.png", (int)iconSize->x, (int)iconSize->y);
+    playerXBound = new vector2D(shooterPoint->x - iconSize->x, shooterPoint->x);
+    playerYBound = new vector2D(shooterPoint->y - (0.5f * iconSize->y), shooterPoint->y + (0.5f * iconSize->y));
+
     targetXBound = new vector2D(enemyPoint->x, enemyPoint->x + target.getComponent<SpriteComponent>().getDestWidth());
     targetYBound = new vector2D(enemyPoint->y, enemyPoint->y + target.getComponent<SpriteComponent>().getDestHeight());
 
@@ -163,6 +175,52 @@ void Game::handleInputs()
 {
     if (enemyActivation)
     {
+        ballX = ball.getComponent<TransformComponent>().position.x;
+        ballY = ball.getComponent<TransformComponent>().position.y;
+        targetX = target.getComponent<TransformComponent>().position.x;
+        targetY = target.getComponent<TransformComponent>().position.y;
+
+        target.getComponent<TransformComponent>().position.y = ballY + 0.01f * iconSize->y;
+
+        playerXBound->x = player.getComponent<TransformComponent>().position.x;
+        playerXBound->y = playerXBound->x + iconSize->x;
+        playerYBound->x = player.getComponent<TransformComponent>().position.y;
+        playerYBound->y = playerYBound->x + iconSize->y;
+
+        targetYBound->x = target.getComponent<TransformComponent>().position.y;
+        targetYBound->y = targetYBound->x + target.getComponent<SpriteComponent>().getDestHeight();
+        targetXBound->x = target.getComponent<TransformComponent>().position.x;
+        targetXBound->y = targetXBound->x + target.getComponent<SpriteComponent>().getDestWidth();
+
+        if ((ballX >= playerXBound->x) && (ballX <= playerXBound->y) && (ballY >= playerYBound->x) && (ballY <= playerYBound->y))
+        {
+            vector2D *vec = generateRandomPath(ballX, ballY, enemyPoint->x, false);
+            ball.getComponent<TransformComponent>().velocity.x = vec->x;
+            ball.getComponent<TransformComponent>().velocity.y = vec->y;
+        }
+
+        if ((ballX >= targetXBound->x))
+        {
+            vector2D *vec = generateRandomPath(ballX, ballY, shooterPoint->x, true);
+            ball.getComponent<TransformComponent>().velocity.x = vec->x;
+            ball.getComponent<TransformComponent>().velocity.y = vec->y;
+        }
+
+        if (ballX <= 0.5 * shooterPoint->x)
+        {
+            enemyActivation = false;
+            enemyIcon.getComponent<MouseController>().deActivate();
+
+            target.getComponent<TransformComponent>().position.x = enemyPoint->x;
+            target.getComponent<TransformComponent>().position.y = enemyPoint->y;
+            target.getComponent<SpriteComponent>().generateSprite("assets/MainIcons/target.png", (int)iconSize->x, (int)iconSize->y);
+            player.getComponent<TransformComponent>().position.x = shooterPoint->x - iconSize->x;
+            player.getComponent<TransformComponent>().position.y = shooterPoint->y - (iconSize->y * 0.5f);
+            ball.getComponent<TransformComponent>().position.x = shooterPoint->x;
+            ball.getComponent<TransformComponent>().position.y = shooterPoint->y;
+            ball.getComponent<TransformComponent>().velocity.x = 0.0f;
+            ball.getComponent<TransformComponent>().velocity.y = 0.0f;
+        }
     }
     else if (enemyIcon.getComponent<MouseController>().isActive())
     {
@@ -336,6 +394,23 @@ void Game::sinConverter(float w)
     duration_cpp += (end_cpp - start_cpp);
     cout << "cpp setting duration time for sin : " << duration_cpp.count() * 1000 << " miliseconds" << endl;
     cout << "assembly usage makes code : " << (duration_cpp.count() / duration_asm.count()) << " times faster!" << endl;
+}
+
+vector2D *Game::generateRandomPath(float x0, float y0, float x1, bool flag)
+{
+    std::random_device rd;  // Obtain a random number from hardware
+    std::mt19937 gen(rd()); // Seed the generator
+    std::uniform_real_distribution<> dis(pitchYBound->x, pitchYBound->y);
+
+    float randomY = dis(gen);
+    float deltaY = randomY - y0;
+    float deltaX = x1 - x0;
+    float v = deltaY / deltaX;
+
+    vector2D *vec = new vector2D(1.0f, v);
+    vector2D::normalizeVector(*vec, flag);
+
+    return vec;
 }
 
 void Game::update()

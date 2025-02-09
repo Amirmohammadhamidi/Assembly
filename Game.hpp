@@ -2,6 +2,7 @@
 #define Game_hpp
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include "vector2D.hpp"
 
 class Game
 {
@@ -28,6 +29,7 @@ public:
     void lineConverter(float a, float b);
     void concaveConverter(float a, float b, float c);
     void sinConverter(float w);
+    vector2D *generateRandomPath(float x0, float y0, float x1, bool flag);
 
 private:
     bool isRunning;

@@ -11,7 +11,7 @@ public:
     vector2D(float x, float y);
 
     vector2D &add(const vector2D &vec);
-    static void normalizeVector(vector2D &vec);
+    static void normalizeVector(vector2D &vec, bool flag);
     // vector2D &subtract(const vector2D &vec);
     // vector2D &multiply(const vector2D &vec);
     // vector2D &divide(const vector2D &vec);

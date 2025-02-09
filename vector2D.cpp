@@ -19,11 +19,16 @@ vector2D &vector2D::add(const vector2D &vec)
     this->y += vec.y;
     return *this;
 }
-void vector2D::normalizeVector(vector2D &vec)
+void vector2D::normalizeVector(vector2D &vec, bool flag)
 {
     float v = sqrt(vec.x * vec.x + vec.y * vec.y);
     vec.x /= v;
     vec.y /= v;
+    if (flag)
+    {
+        vec.x *= -1.0f;
+        vec.y *= -1.0f;
+    }
 }
 // vector2D &vector2D::subtract(const vector2D &vec)
 // {
